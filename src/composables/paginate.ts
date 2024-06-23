@@ -1,12 +1,12 @@
 import {ref, computed} from 'vue';
 
-interface UsePaginationProps {
+export interface UsePaginationProps {
 	total: number;
 	perPage: number;
 	currentPage?: number;
 }
 
-export function usePagination({total, perPage, currentPage = 1}: UsePaginationProps) {
+export default function usePagination({total, perPage, currentPage = 1}: UsePaginationProps) {
 	const currentPageRef = ref(currentPage);
 	const totalPages = computed(() => Math.ceil(total / perPage));
 
