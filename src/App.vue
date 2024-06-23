@@ -35,5 +35,4 @@
 </template>
 
 <style scoped>
-@import "element-plus/theme-chalk/index.css";
 </style>
