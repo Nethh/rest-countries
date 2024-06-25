@@ -1,14 +1,14 @@
-import {ref, computed} from 'vue';
+import {ref, Ref, computed} from 'vue';
 
 export interface UsePaginationProps {
-	total: number;
+	total: Ref<number>;
 	perPage: number;
 	currentPage?: number;
 }
 
 export default function usePagination({total, perPage, currentPage = 1}: UsePaginationProps) {
 	const currentPageRef = ref(currentPage);
-	const totalPages = computed(() => Math.ceil(total / perPage));
+	const totalPages = computed(() => Math.ceil(total.value / perPage));
 
 	const paginatedItems = computed(() => {
 		const start = (currentPageRef.value - 1) * perPage;
@@ -22,24 +22,10 @@ export default function usePagination({total, perPage, currentPage = 1}: UsePagi
 		}
 	};
 
-	const nextPage = () => {
-		if (currentPageRef.value < totalPages.value) {
-			currentPageRef.value += 1;
-		}
-	};
-
-	const previousPage = () => {
-		if (currentPageRef.value > 1) {
-			currentPageRef.value -= 1;
-		}
-	};
-
 	return {
 		currentPage: currentPageRef,
 		totalPages,
 		paginatedItems,
 		setCurrentPage,
-		nextPage,
-		previousPage,
 	};
 }

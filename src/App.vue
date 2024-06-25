@@ -9,26 +9,25 @@
 		<el-main>
 			<RouterView v-slot="{ Component }">
 				<template v-if="Component">
-					<Transition mode="out-in">
-						<KeepAlive>
-							<Suspense>
-								<!-- main content -->
-								<component :is="Component"></component>
+					<KeepAlive>
+						<Suspense>
+							<!-- main content -->
+							<component :is="Component"></component>
 
-								<!-- loading state -->
-								<template #fallback>
-									<el-skeleton animated :count="4"></el-skeleton>
-								</template>
-							</Suspense>
-						</KeepAlive>
-					</Transition>
+							<!-- loading state -->
+							<template #fallback>
+								<el-skeleton animated :count="4"></el-skeleton>
+							</template>
+						</Suspense>
+					</KeepAlive>
 				</template>
 			</RouterView>
 		</el-main>
 		<el-footer>
 			<div>
-				Created by: Thol vanneth
-				Github repo : <a href="https://github.com/Nethh/rest-countries"  rel="noopener noreferrer" target="_blank" >Nethh</a>
+				<b>Created by</b>: Thol vanneth
+				<br>
+				<b>Github repo </b>: <el-link class="!text-base" type="primary" href="https://github.com/Nethh/rest-countries" target="_blank"  rel="noopener noreferrer">Nethh</el-link>
 			</div>
 		</el-footer>
 	</el-container>

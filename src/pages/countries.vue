@@ -1,46 +1,109 @@
 <script setup lang="ts">
 import useApi from "@/composables/api.ts";
 import usePagination from "@/composables/paginate.ts";
-import {computed} from "vue";
+import {reactive, ref, shallowRef, watch} from "vue";
+import { Search, CaretRight} from '@element-plus/icons-vue'
 
+// Fetch all the countries data since the API itself does not provide a pagination
 const {response: countries, request: onGetCountries, loading: load} = useApi('https://restcountries.com/v3.1/all',);
 await onGetCountries();
 
-const {paginatedItems, totalPages, setCurrentPage: handlePageChange } = usePagination({
-	total: countries.value.length, perPage: 25
-})
+const search = reactive({name: '', sort: ''});
+const timeout = shallowRef(0);
 
-const paginatedCountries = computed(() => {
-	const {start, end} = paginatedItems.value;
-	return countries.value.slice(start, end);
-});
+// init with all countries data
+const filteredCountries = ref([...countries.value]);
 
+const handleSearch = () => {
+	clearTimeout(timeout.value);
+	load.value = true
+	timeout.value = setTimeout(() => {
+		const query = search.name;
+		const sort = search.sort;
+		let data = [...countries.value];
+
+		// if there is no query or sort return the full list of countries
+		if (!query && !sort) {
+			filteredCountries.value = data;
+			handlePaginate(1);
+			load.value = false;
+			return
+		}
+
+		if (query) {
+			data = data.filter(country => country.name.official.toLowerCase().includes(query.toLowerCase()));
+		}
+
+		if (sort) {
+			data = data.sort((a, b) => {
+				if (sort === 'asc') {
+					return a.name.official.localeCompare(b.name.official);
+				}
+				return b.name.official.localeCompare(a.name.official);
+			});
+			filteredCountries.value = data;
+		}
+
+		filteredCountries.value = data;
+		handlePaginate(1);
+		load.value = false;
+	}, 500)
+}
+
+let pagination = null;
+const paginatedCountries = ref([])
+const handlePaginate = (page = 1) => {
+	pagination = usePagination({
+		total: ref(filteredCountries.value.length), perPage: 25
+	});
+
+	pagination.setCurrentPage(page)
+	const {start, end} = pagination.paginatedItems.value;
+	paginatedCountries.value = filteredCountries.value.slice(start, end)
+}
+
+// watch the search object for trigger the function when the value changes
+watch(search, handleSearch, {immediate: true});
 
 </script>
 
 <template>
+	<div class="bg-gray mb-4 gap-x-5 grid md:grid-cols-2">
+		<div >
+		</div>
+		<div >
+			<div class="grid md:grid-cols-4 grid-cols-3 gap-x-5">
+				<el-input @input="handleSearch" class="md:col-span-3 col-span-2" size="large" :prefix-icon="Search" v-model="search.name" placeholder="Search for official name..."></el-input>
+				<el-button size="large">
+					Sort name
+				</el-button>
+			</div>
+		</div>
+	</div>
+
+
 	<el-card body-class="!p-0">
-		<el-table height="calc(100vh - 200px)" v-loading="load" stripe :data="paginatedCountries">
+		<el-table height="calc(100vh - 250px)" v-loading="load" stripe :data="paginatedCountries">
 			<el-table-column label="No." align="center" width="50" type="index"></el-table-column>
 			<el-table-column align="center" width="70" label="Flag">
 				<template v-slot="{row}">
-					<img class="w-[30px] rounded-sm" :src="row.flags.png"
+					<img class="w-full border h-[30px] rounded-sm" :src="row.flags.png"
 						 :alt="row.flags?.alt || row.name.official || 'country flag pic'">
 				</template>
 			</el-table-column>
 			<el-table-column label="Name" align="center">
-				<el-table-column show-overflow-tooltip label="Official" prop="name.official"></el-table-column>
-				<el-table-column label="Alternative">
+				<el-table-column min-width="150"  show-overflow-tooltip label="Official" prop="name.official"></el-table-column>
+				<el-table-column min-width="150"  label="Alternative">
 					<template v-slot="{row}">
 						<ul class="m-0">
-							<li v-for="(alt, index) in row.altSpellings" :key="index">{{ alt }}</li>
+							<li v-for="(alt, index) in row.altSpellings" :key="index"><el-icon><CaretRight/></el-icon> {{ alt }}</li>
 						</ul>
 					</template>
 				</el-table-column>
-				<el-table-column label="Native">
+				<el-table-column min-width="150" label="Native">
 					<template v-slot="{row}">
 						<ul class="m-0">
-							<li v-for="(value, key) of row.name.nativeName" :key="key">{{ value.official }}
+							<li v-for="(value, key) of row.name.nativeName" :key="key"><el-icon><CaretRight/></el-icon> {{ value.official }}
 								<el-tag size="small">{{ key }}</el-tag>
 							</li>
 						</ul>
@@ -69,14 +132,14 @@ const paginatedCountries = computed(() => {
 			</el-table-column>
 		</el-table>
 		<template #footer>
-			<div class="flex">
+			<div class="flex justify-between items-center">
+				Showing results {{paginatedCountries.length}} of {{filteredCountries.length}}
 				<el-pagination
-					class="mx-auto"
 					background
 					layout="prev, pager, next"
-					:page-count="totalPages"
-					@current-change="handlePageChange"
-				/>
+					:page-count="pagination?.totalPages?.value"
+					@current-change="handlePaginate"
+				></el-pagination>
 			</div>
 		</template>
 	</el-card>
