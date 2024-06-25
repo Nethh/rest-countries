@@ -2,13 +2,13 @@
 import useApi from "@/composables/api.ts";
 import usePagination from "@/composables/paginate.ts";
 import {reactive, ref, shallowRef, watch} from "vue";
-import { Search, CaretRight} from '@element-plus/icons-vue'
+import { Search, CaretRight, Sort, Select} from '@element-plus/icons-vue'
 
 // Fetch all the countries data since the API itself does not provide a pagination
 const {response: countries, request: onGetCountries, loading: load} = useApi('https://restcountries.com/v3.1/all',);
 await onGetCountries();
 
-const search = reactive({name: '', sort: ''});
+const search = reactive({name: '', sort: 'Default'});
 const timeout = shallowRef(0);
 
 // init with all countries data
@@ -34,9 +34,9 @@ const handleSearch = () => {
 			data = data.filter(country => country.name.official.toLowerCase().includes(query.toLowerCase()));
 		}
 
-		if (sort) {
+		if (sort !== 'Default') {
 			data = data.sort((a, b) => {
-				if (sort === 'asc') {
+				if (sort === 'Asc') {
 					return a.name.official.localeCompare(b.name.official);
 				}
 				return b.name.official.localeCompare(a.name.official);
@@ -74,16 +74,27 @@ watch(search, handleSearch, {immediate: true});
 		<div >
 			<div class="grid md:grid-cols-4 grid-cols-3 gap-x-5">
 				<el-input @input="handleSearch" class="md:col-span-3 col-span-2" size="large" :prefix-icon="Search" v-model="search.name" placeholder="Search for official name..."></el-input>
-				<el-button size="large">
-					Sort name
-				</el-button>
+				<div class="w-full">
+					<el-dropdown class="w-full" trigger="click">
+						<el-button class="w-full" size="large" type="primary">
+							Sort name: {{search.sort}}
+						</el-button>
+						<template #dropdown>
+							<el-dropdown-menu>
+								<el-dropdown-item @click.native="search.sort = 'Default'"><el-icon v-if="search.sort === 'Default'"><Select/></el-icon> Default </el-dropdown-item>
+								<el-dropdown-item @click.native="search.sort = 'Asc'"><el-icon v-if="search.sort === 'Asc'"><Select/></el-icon> Asc </el-dropdown-item>
+								<el-dropdown-item @click.native="search.sort = 'Desc'"><el-icon v-if="search.sort === 'Desc'"><Select/></el-icon> Desc </el-dropdown-item>
+							</el-dropdown-menu>
+						</template>
+					</el-dropdown>
+				</div>
 			</div>
 		</div>
 	</div>
 
 
 	<el-card body-class="!p-0">
-		<el-table height="calc(100vh - 250px)" v-loading="load" stripe :data="paginatedCountries">
+		<el-table height="calc(100vh - 200px)" v-loading="load" stripe :data="paginatedCountries">
 			<el-table-column label="No." align="center" width="50" type="index"></el-table-column>
 			<el-table-column align="center" width="70" label="Flag">
 				<template v-slot="{row}">
